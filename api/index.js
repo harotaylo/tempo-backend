@@ -32,8 +32,8 @@ app.get('/slack/callback', async (req, res) => {
     
     const { access_token, team } = resp.data;
     
-    // Save to Supabase via REST API
-    const saveResp = await fetch(`${SUPABASE_URL}/rest/v1/workspaces`, {
+    // Save to Supabase (fire and forget)
+    fetch(`${SUPABASE_URL}/rest/v1/workspaces`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -43,13 +43,11 @@ app.get('/slack/callback', async (req, res) => {
       body: JSON.stringify({
         slack_team_id: team.id,
         slack_team_name: team.name,
-        slack_team_domain: team.domain || '',
         bot_token: access_token,
       }),
-    });
+    }).catch(e => console.error('Save error:', e));
     
-    const saveData = await saveResp.json();
-    res.json({ ok: true, team: team.name, saved: saveResp.ok, workspace: saveData });
+    res.json({ success: true, team: team.name, token: 'received' });
   } catch (e) {
     res.json({ error: e.message });
   }
