@@ -8,11 +8,12 @@ app.use(cors());
 
 const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID;
 const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET;
-const REDIRECT_URI = process.env.REDIRECT_URI || 'https://tempo-backend-ecru.vercel.app/slack/callback';
+const REDIRECT_URI = 'https://tempo-backend-ecru.vercel.app/slack/callback';
 
-app.get('/', (req, res) => res.json({ status: 'ok' }));
+app.get('/', (req, res) => res.json({ status: 'ok', client_id: SLACK_CLIENT_ID ? 'set' : 'NOT SET' }));
 
 app.get('/auth/slack', (req, res) => {
+  if (!SLACK_CLIENT_ID) return res.status(400).json({ error: 'Client ID not set' });
   const url = `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=channels:read,users:read&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
   res.redirect(url);
 });
@@ -26,9 +27,9 @@ app.get('/slack/callback', async (req, res) => {
       params: { client_id: SLACK_CLIENT_ID, client_secret: SLACK_CLIENT_SECRET, code, redirect_uri: REDIRECT_URI }
     });
 
-    res.json({ success: resp.data.ok, team: resp.data.team?.name, token: resp.data.access_token ? 'received' : 'none' });
+    res.json({ slack_response: resp.data });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.json({ error: e.message });
   }
 });
 
